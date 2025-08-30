@@ -16,16 +16,30 @@ fetch("timetable.json")
     }
   });
 
-// Local Notification API (works only after user clicks)
+// ✅ Register Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registered"))
+    .catch(err => console.error("SW registration failed:", err));
+}
+
+// ✅ Enable Notifications
 document.getElementById("enable-notifications").addEventListener("click", () => {
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
-      new Notification("✅ Notifications enabled!");
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification("✅ Notifications enabled!", {
+          body: "You will get class reminders 10 minutes before.",
+          icon: "icon.png"
+        });
+      });
+    } else {
+      alert("❌ Please allow notifications in your browser.");
     }
   });
 });
 
-// Simple reminder checker (runs every minute)
+// ✅ Class reminder checker (every minute)
 setInterval(() => {
   const now = new Date();
   const today = now.toLocaleDateString("en-US", { weekday: "long" });
@@ -43,9 +57,11 @@ setInterval(() => {
         const diff = Math.round((classTime - now) / 60000);
 
         if (diff === 10) {
-          new Notification("Class Reminder", {
-            body: `${subject} starts at ${start}`,
-            icon: "icon.png"
+          navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification("Class Reminder", {
+              body: `${subject} starts at ${start}`,
+              icon: "icon.png"
+            });
           });
         }
       });
